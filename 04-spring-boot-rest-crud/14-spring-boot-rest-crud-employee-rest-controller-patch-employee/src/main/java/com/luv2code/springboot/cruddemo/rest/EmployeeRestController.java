@@ -1,7 +1,6 @@
 package com.luv2code.springboot.cruddemo.rest;
 
 import tools.jackson.databind.json.JsonMapper;
-import tools.jackson.databind.node.ObjectNode;
 import com.luv2code.springboot.cruddemo.entity.Employee;
 import com.luv2code.springboot.cruddemo.service.EmployeeService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -76,9 +75,9 @@ public class EmployeeRestController {
                                   @RequestBody Map<String, Object> patchPayload) {
 
         // Step 1: Retrieve the existing employee from database
-        Employee existingEmployee = employeeService.findById(employeeId);
+        Employee tempEmployee = employeeService.findById(employeeId);
 
-        if (existingEmployee == null) {
+        if (tempEmployee == null) {
             throw new RuntimeException("Employee id not found - " + employeeId);
         }
 
@@ -92,44 +91,12 @@ public class EmployeeRestController {
 
         // Step 3: Apply the partial update
         // This creates a NEW employee object with the updates applied
-        Employee updatedEmployee = applyPatchToEmployee(existingEmployee, patchPayload);
+        Employee patchedEmployee = jsonMapper.updateValue(tempEmployee, patchPayload);
 
         // Step 4: Save the updated employee to database and return it
-        Employee savedEmployee = employeeService.save(updatedEmployee);
+        Employee dbEmployee = employeeService.save(patchedEmployee);
 
-        return savedEmployee;
-    }
-
-    private Employee applyPatchToEmployee(Employee existingEmployee,
-                                         Map<String, Object> updates) {
-
-        // Step 1: Convert the existing employee object to a JSON structure (ObjectNode)
-        // This allows us to work with the data in a flexible JSON format
-        ObjectNode existingEmployeeJson = jsonMapper.convertValue(
-            existingEmployee,
-            ObjectNode.class
-        );
-
-        // Step 2: Convert the updates Map to a JSON structure (ObjectNode)
-        // This ensures the updates are in the same format as the employee
-        ObjectNode updatesJson = jsonMapper.convertValue(
-            updates,
-            ObjectNode.class
-        );
-
-        // Step 3: Merge the updates into the employee JSON
-        // setAll() takes all fields from updatesJson and adds/replaces them in existingEmployeeJson
-        // Fields not in updatesJson remain unchanged
-        existingEmployeeJson.setAll(updatesJson);
-
-        // Step 4: Convert the merged JSON back to an Employee object
-        // This creates a NEW Employee object (doesn't modify the original)
-        Employee patchedEmployee = jsonMapper.convertValue(
-            existingEmployeeJson,
-            Employee.class
-        );
-
-        return patchedEmployee;
+        return dbEmployee;
     }
 
 }

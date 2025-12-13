@@ -1,7 +1,6 @@
 package com.luv2code.springboot.cruddemo.rest;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.json.JsonMapper;
 import com.luv2code.springboot.cruddemo.entity.Employee;
 import com.luv2code.springboot.cruddemo.service.EmployeeService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,12 +15,12 @@ public class EmployeeRestController {
 
     private EmployeeService employeeService;
 
-    private ObjectMapper objectMapper;
+    private JsonMapper jsonMapper;
 
     @Autowired
-    public EmployeeRestController(EmployeeService theEmployeeService, ObjectMapper theObjectMapper) {
+    public EmployeeRestController(EmployeeService theEmployeeService, JsonMapper theJsonMapper) {
         employeeService = theEmployeeService;
-        objectMapper = theObjectMapper;
+        jsonMapper = theJsonMapper;
     }
 
     // expose "/employees" and return a list of employees
@@ -75,55 +74,29 @@ public class EmployeeRestController {
     public Employee patchEmployee(@PathVariable int employeeId,
                                   @RequestBody Map<String, Object> patchPayload) {
 
+        // Step 1: Retrieve the existing employee from database
         Employee tempEmployee = employeeService.findById(employeeId);
 
-        // throw exception if null
         if (tempEmployee == null) {
             throw new RuntimeException("Employee id not found - " + employeeId);
         }
 
-        // throw exception if request body contains "id" key
+        // Step 2: Security check - prevent ID modifications
+        // The ID should never change, so reject any attempts to modify it
         if (patchPayload.containsKey("id")) {
-            throw new RuntimeException("Employee id not allowed in request body - " + employeeId);
+            throw new RuntimeException(
+                "Employee id cannot be modified. Remove 'id' from request body."
+            );
         }
 
-        Employee patchedEmployee = apply(patchPayload, tempEmployee);
+        // Step 3: Apply the partial update
+        // This creates a NEW employee object with the updates applied
+        Employee patchedEmployee = jsonMapper.updateValue(tempEmployee, patchPayload);
 
+        // Step 4: Save the updated employee to database and return it
         Employee dbEmployee = employeeService.save(patchedEmployee);
 
         return dbEmployee;
-    }
-
-    private Employee apply(Map<String, Object> patchPayload, Employee tempEmployee) {
-
-        // Convert employee object to a JSON object node
-        ObjectNode employeeNode = objectMapper.convertValue(tempEmployee, ObjectNode.class);
-
-        // Convert the patchPayload map to a JSON object node
-        ObjectNode patchNode = objectMapper.convertValue(patchPayload, ObjectNode.class);
-
-        // Merge the patch updates into the employee node
-        employeeNode.setAll(patchNode);
-
-        return objectMapper.convertValue(employeeNode, Employee.class);
-    }
-
-    // add mapping for DELETE /employees/{employeeId} - delete employee
-
-    @DeleteMapping("/employees/{employeeId}")
-    public String deleteEmployee(@PathVariable int employeeId) {
-
-        Employee tempEmployee = employeeService.findById(employeeId);
-
-        // throw exception if null
-
-        if (tempEmployee == null) {
-            throw new RuntimeException("Employee id not found - " + employeeId);
-        }
-
-        employeeService.deleteById(employeeId);
-
-        return "Deleted employee id - " + employeeId;
     }
 
 }
