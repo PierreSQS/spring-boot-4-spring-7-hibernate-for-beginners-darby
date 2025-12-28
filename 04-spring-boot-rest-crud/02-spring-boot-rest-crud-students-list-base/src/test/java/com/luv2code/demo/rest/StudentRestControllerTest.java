@@ -8,9 +8,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import tools.jackson.databind.json.JsonMapper;
 
 import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(StudentRestController.class)
@@ -18,6 +20,9 @@ class StudentRestControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    JsonMapper jsonMapper;
 
     @Test
     @DisplayName("GET /api/students -> returns list of 3 students")
@@ -34,22 +39,27 @@ class StudentRestControllerTest {
                 .andExpect(jsonPath("$[0].firstName", is(s1.getFirstName())))
                 .andExpect(jsonPath("$[0].lastName", is(s1.getLastName())))
                 .andExpect(jsonPath("$[1].firstName", is(s2.getFirstName())))
-                .andExpect(jsonPath("$[2].firstName", is(s3.getFirstName())));
+                .andExpect(jsonPath("$[2].firstName", is(s3.getFirstName())))
+                .andDo(print());
     }
 
     @Test
     @DisplayName("GET wrong path -> 404 Not Found (edge case)")
     void getWrongPath_returnsNotFound() throws Exception {
         mockMvc.perform(get("/api/student")) // singular path does not exist
-                .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound())
+                .andDo(print());
     }
 
     @Test
     @DisplayName("POST to GET-only endpoint -> 405 Method Not Allowed (edge case)")
     void postToGetOnlyEndpoint_returnsMethodNotAllowed() throws Exception {
+        Student student = Student.builder().firstName("X").lastName("Y").build();
+
         mockMvc.perform(post("/api/students")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"firstName\":\"X\",\"lastName\":\"Y\"}"))
-                .andExpect(status().isMethodNotAllowed());
+                        .content(jsonMapper.writeValueAsString(student)))
+                .andExpect(status().isMethodNotAllowed())
+                .andDo(print());
     }
 }
