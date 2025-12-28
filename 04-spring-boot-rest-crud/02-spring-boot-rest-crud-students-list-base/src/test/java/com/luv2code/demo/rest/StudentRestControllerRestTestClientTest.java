@@ -1,18 +1,17 @@
-// language: java
-// File: `src/test/java/com/luv2code/demo/rest/StudentRestControllerRestTest.java`
 package com.luv2code.demo.rest;
 
 import com.luv2code.demo.entity.Student;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.web.client.RestTestClient;
+import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureRestTestClient;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import org.springframework.test.web.servlet.client.RestTestClient;
 
 @WebMvcTest(StudentRestController.class)
+@AutoConfigureRestTestClient
 class StudentRestControllerRestTest {
 
     @Autowired
@@ -56,8 +55,9 @@ class StudentRestControllerRestTest {
         restClient.post()
                 .uri("/api/students")
                 .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(student)
+                .body(student)
                 .exchange()
-                .expectStatus().isMethodNotAllowed();
+                .expectStatus()
+                .isEqualTo(HttpStatus.METHOD_NOT_ALLOWED);
     }
 }
