@@ -18,6 +18,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
@@ -63,11 +64,12 @@ class EmployeeRestControllerTest {
     }
 
     @Test
-    void getEmployee_notFound_returnsServerError() throws Exception {
+    void getEmployee_notFound_returnsServerError() {
         when(employeeService.findById(99)).thenReturn(null);
 
-        mockMvc.perform(get("/api/employees/99"))
-                .andExpect(status().isInternalServerError());
+        assertThatThrownBy(() -> mockMvc.perform(get("/api/employees/99")))
+                .hasMessageContaining("Employee id not found - 99");
+
     }
 
     @Test
@@ -94,9 +96,9 @@ class EmployeeRestControllerTest {
                 .andExpect(jsonPath("$.id", is(10)))
                 .andExpect(jsonPath("$.firstName", is("Charlie")));
 
-        ArgumentCaptor<Employee> captor = ArgumentCaptor.forClass(Employee.class);
-        verify(employeeService).save(captor.capture());
-        assert captor.getValue().getId() == 0;
+        ArgumentCaptor<Employee> employeeArgumentCaptor = ArgumentCaptor.forClass(Employee.class);
+        verify(employeeService).save(employeeArgumentCaptor.capture());
+        assert employeeArgumentCaptor.getValue().getId() == 0;
     }
 
     @Test
@@ -135,10 +137,10 @@ class EmployeeRestControllerTest {
         payload.put("id", 999); // attempt to change id should be rejected
         String json = jsonMapper.writeValueAsString(payload);
 
-        mockMvc.perform(patch("/api/employees/7")
+        assertThatThrownBy(() -> mockMvc.perform(patch("/api/employees/7")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json))
-                .andExpect(status().isInternalServerError());
+                        .content(json)))
+                .hasMessageContaining(" Employee id cannot be modified. Remove 'id' from request body");
     }
 
     @Test
@@ -173,9 +175,10 @@ class EmployeeRestControllerTest {
         Map<String, Object> patchPayload = Collections.singletonMap("firstName", "Ghost");
         String json = jsonMapper.writeValueAsString(patchPayload);
 
-        mockMvc.perform(patch("/api/employees/42")
+        assertThatThrownBy(() -> mockMvc.perform(patch("/api/employees/42")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json))
-                .andExpect(status().isInternalServerError());
+                        .content(json)))
+                .hasMessageContaining("Employee id not found - 42");
+
     }
 }
