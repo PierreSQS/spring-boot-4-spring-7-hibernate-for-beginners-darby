@@ -1,19 +1,17 @@
 // java
 package com.luv2code.springboot.cruddemo.rest;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.json.JsonMapper;
+
 import com.luv2code.springboot.cruddemo.entity.Employee;
 import com.luv2code.springboot.cruddemo.service.EmployeeService;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.Bean;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -30,24 +28,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(EmployeeRestController.class)
 class EmployeeRestControllerTest {
 
-    @TestConfiguration
-    static class Config {
-        @Bean
-        public JsonMapper jsonMapper() {
-            return JsonMapper.builder().build();
-        }
-    }
-
     @Autowired
     private MockMvc mockMvc;
 
     @Autowired
     private JsonMapper jsonMapper; // real mapper injected
 
-    @MockBean
+    @MockitoBean
     private EmployeeService employeeService;
-
-    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Test
     void findAll_returnsList() throws Exception {
@@ -97,7 +85,7 @@ class EmployeeRestControllerTest {
             return arg;
         });
 
-        String json = objectMapper.writeValueAsString(incoming);
+        String json = jsonMapper.writeValueAsString(incoming);
 
         mockMvc.perform(post("/api/employees")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -122,7 +110,7 @@ class EmployeeRestControllerTest {
 
         when(employeeService.save(any(Employee.class))).thenReturn(updated);
 
-        String json = objectMapper.writeValueAsString(updated);
+        String json = jsonMapper.writeValueAsString(updated);
 
         mockMvc.perform(put("/api/employees")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -145,7 +133,7 @@ class EmployeeRestControllerTest {
 
         Map<String, Object> payload = new HashMap<>();
         payload.put("id", 999); // attempt to change id should be rejected
-        String json = objectMapper.writeValueAsString(payload);
+        String json = jsonMapper.writeValueAsString(payload);
 
         mockMvc.perform(patch("/api/employees/7")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -165,7 +153,7 @@ class EmployeeRestControllerTest {
         when(employeeService.findById(8)).thenReturn(existing);
 
         Map<String, Object> patchPayload = Collections.singletonMap("firstName", "Franklin");
-        String json = objectMapper.writeValueAsString(patchPayload);
+        String json = jsonMapper.writeValueAsString(patchPayload);
 
         // let the real JsonMapper perform the update; ensure save echoes the saved object
         when(employeeService.save(any(Employee.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -183,7 +171,7 @@ class EmployeeRestControllerTest {
         when(employeeService.findById(42)).thenReturn(null);
 
         Map<String, Object> patchPayload = Collections.singletonMap("firstName", "Ghost");
-        String json = objectMapper.writeValueAsString(patchPayload);
+        String json = jsonMapper.writeValueAsString(patchPayload);
 
         mockMvc.perform(patch("/api/employees/42")
                         .contentType(MediaType.APPLICATION_JSON)
