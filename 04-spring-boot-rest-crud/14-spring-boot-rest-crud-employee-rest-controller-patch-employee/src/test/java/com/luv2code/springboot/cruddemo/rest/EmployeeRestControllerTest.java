@@ -83,8 +83,13 @@ class EmployeeRestControllerTest {
 
         when(employeeService.save(any(Employee.class))).thenAnswer(invocation -> {
             Employee arg = invocation.getArgument(0);
-            arg.setId(10); // simulate DB assigned id
-            return arg;
+            // simulate DB assigned id WITHOUT mutating the argument
+            return Employee.builder()
+                    .id(10)
+                    .firstName(arg.getFirstName())
+                    .lastName(arg.getLastName())
+                    .email(arg.getEmail())
+                    .build();
         });
 
         String json = jsonMapper.writeValueAsString(incoming);
@@ -98,6 +103,8 @@ class EmployeeRestControllerTest {
 
         ArgumentCaptor<Employee> employeeArgumentCaptor = ArgumentCaptor.forClass(Employee.class);
         verify(employeeService).save(employeeArgumentCaptor.capture());
+
+        // now this will be 0, because we no longer changed the same instance in the stub
         assert employeeArgumentCaptor.getValue().getId() == 0;
     }
 
