@@ -3,7 +3,6 @@ package com.luv2code.springboot.cruddemo.rest;
 import tools.jackson.databind.json.JsonMapper;
 import com.luv2code.springboot.cruddemo.entity.Employee;
 import com.luv2code.springboot.cruddemo.service.EmployeeService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -13,11 +12,10 @@ import java.util.Map;
 @RequestMapping("/api")
 public class EmployeeRestController {
 
-    private EmployeeService employeeService;
+    private final EmployeeService employeeService;
 
-    private JsonMapper jsonMapper;
+    private final JsonMapper jsonMapper;
 
-    @Autowired
     public EmployeeRestController(EmployeeService theEmployeeService, JsonMapper theJsonMapper) {
         employeeService = theEmployeeService;
         jsonMapper = theJsonMapper;
@@ -29,7 +27,7 @@ public class EmployeeRestController {
         return employeeService.findAll();
     }
 
-    // add mapping for GET /employees/{employeeId}
+    // add the  mapping for GET /employees/{employeeId} - get employee with employeeId
 
     @GetMapping("/employees/{employeeId}")
     public Employee getEmployee(@PathVariable int employeeId) {
@@ -53,9 +51,7 @@ public class EmployeeRestController {
 
         theEmployee.setId(0);
 
-        Employee dbEmployee = employeeService.save(theEmployee);
-
-        return dbEmployee;
+        return employeeService.save(theEmployee);
     }
 
     // add mapping for PUT /employees - update existing employee
@@ -63,9 +59,7 @@ public class EmployeeRestController {
     @PutMapping("/employees")
     public Employee updateEmployee(@RequestBody Employee theEmployee) {
 
-        Employee dbEmployee = employeeService.save(theEmployee);
-
-        return dbEmployee;
+        return employeeService.save(theEmployee);
     }
 
     // add mapping for PATCH /employees/{employeeId} - patch employee ... partial update
@@ -94,9 +88,7 @@ public class EmployeeRestController {
         Employee patchedEmployee = jsonMapper.updateValue(tempEmployee, patchPayload);
 
         // Step 4: Save the updated employee to database and return it
-        Employee dbEmployee = employeeService.save(patchedEmployee);
-
-        return dbEmployee;
+        return employeeService.save(patchedEmployee);
     }
 
 }
