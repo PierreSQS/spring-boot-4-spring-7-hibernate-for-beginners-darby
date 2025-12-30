@@ -1,27 +1,22 @@
 package com.luv2code.springboot.cruddemo.rest;
 
+import lombok.RequiredArgsConstructor;
 import tools.jackson.databind.json.JsonMapper;
 import com.luv2code.springboot.cruddemo.entity.Employee;
 import com.luv2code.springboot.cruddemo.service.EmployeeService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
 
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/api")
 public class EmployeeRestController {
 
-    private EmployeeService employeeService;
+    private final EmployeeService employeeService;
 
-    private JsonMapper jsonMapper;
-
-    @Autowired
-    public EmployeeRestController(EmployeeService theEmployeeService, JsonMapper theJsonMapper) {
-        employeeService = theEmployeeService;
-        jsonMapper = theJsonMapper;
-    }
+    private final JsonMapper jsonMapper;
 
     // expose "/employees" and return a list of employees
     @GetMapping("/employees")
@@ -29,7 +24,7 @@ public class EmployeeRestController {
         return employeeService.findAll();
     }
 
-    // add mapping for GET /employees/{employeeId}
+    // add mapping for GET /employees/{employeeId} - find employee by ID
 
     @GetMapping("/employees/{employeeId}")
     public Employee getEmployee(@PathVariable int employeeId) {
@@ -53,9 +48,7 @@ public class EmployeeRestController {
 
         theEmployee.setId(0);
 
-        Employee dbEmployee = employeeService.save(theEmployee);
-
-        return dbEmployee;
+        return employeeService.save(theEmployee);
     }
 
     // add mapping for PUT /employees - update existing employee
@@ -63,9 +56,7 @@ public class EmployeeRestController {
     @PutMapping("/employees")
     public Employee updateEmployee(@RequestBody Employee theEmployee) {
 
-        Employee dbEmployee = employeeService.save(theEmployee);
-
-        return dbEmployee;
+        return employeeService.save(theEmployee);
     }
 
     // add mapping for PATCH /employees/{employeeId} - patch employee ... partial update
@@ -76,10 +67,6 @@ public class EmployeeRestController {
 
         // Step 1: Retrieve the existing employee from database
         Employee tempEmployee = employeeService.findById(employeeId);
-
-        if (tempEmployee == null) {
-            throw new RuntimeException("Employee id not found - " + employeeId);
-        }
 
         // Step 2: Security check - prevent ID modifications
         // The ID should never change, so reject any attempts to modify it
@@ -94,9 +81,7 @@ public class EmployeeRestController {
         Employee patchedEmployee = jsonMapper.updateValue(tempEmployee, patchPayload);
 
         // Step 4: Save the updated employee to database and return it
-        Employee dbEmployee = employeeService.save(patchedEmployee);
-
-        return dbEmployee;
+        return employeeService.save(patchedEmployee);
     }
 
 }
