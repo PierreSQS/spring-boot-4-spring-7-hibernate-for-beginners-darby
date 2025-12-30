@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.client.RestTestClient;
 import tools.jackson.databind.json.JsonMapper;
@@ -24,11 +25,11 @@ class EmployeeRestControllerRestTestClientTest {
 
     private RestTestClient client;
 
+    @MockitoBean
     private EmployeeService employeeService;
 
     @BeforeEach
     void setUp() {
-        employeeService = mock(EmployeeService.class);
         JsonMapper jsonMapper = JsonMapper.builder().build();
 
         EmployeeRestController controller =
@@ -38,12 +39,12 @@ class EmployeeRestControllerRestTestClientTest {
     }
 
     private Employee createEmployee(int id) {
-        Employee e = new Employee();
-        e.setId(id);
-        e.setFirstName("John");
-        e.setLastName("Doe");
-        e.setEmail("john.doe@example.com");
-        return e;
+        return Employee.builder()
+                .id(id)
+                .firstName("John")
+                .lastName("Doe")
+                .email("john.doe@example.com")
+                .build();
     }
 
     // -------------------------------------------------------------------------
