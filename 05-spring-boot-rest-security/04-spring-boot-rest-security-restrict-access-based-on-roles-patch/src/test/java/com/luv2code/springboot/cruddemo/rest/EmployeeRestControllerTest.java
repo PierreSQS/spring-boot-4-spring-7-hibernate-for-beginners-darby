@@ -67,7 +67,7 @@ class EmployeeRestControllerMvcTest {
     @Test
     @DisplayName("GET /api/employees/{id} - edge case: employee not found -> 500")
     @WithMockUser(username = "john", roles = {"EMPLOYEE"})
-    void getEmployee_notFound_throwsException() throws Exception {
+    void getEmployee_notFound_throwsException() {
         int missingId = 99;
         when(employeeService.findById(missingId)).thenReturn(null);
 
@@ -94,7 +94,7 @@ class EmployeeRestControllerMvcTest {
     @Test
     @DisplayName("PATCH /api/employees/{id} - Rejects ID modification")
     @WithMockUser(username = "mary", roles = {"MANAGER"})
-    void patchEmployee_payloadContainsId_returnsError() throws Exception {
+    void patchEmployee_payloadContainsId_returnsError() {
         int id = 5;
         when(employeeService.findById(id)).thenReturn(createEmployee(id));
 
