@@ -6,6 +6,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.client.RestTestClient;
 import tools.jackson.databind.json.JsonMapper;
@@ -187,7 +188,11 @@ class EmployeeRestControllerRestTestClientTest {
         assertThat(result.getId()).isEqualTo(5);
         assertThat(result.getFirstName()).isEqualTo("Updated");
 
-        verify(employeeService).save(incoming);
+        verify(employeeService).save(argThat(emp ->
+                emp.getId() == 5 &&
+                        "Updated".equals(emp.getFirstName())
+        ));
+
     }
 
     // -------------------------------------------------------------------------
@@ -213,6 +218,7 @@ class EmployeeRestControllerRestTestClientTest {
 
         Employee result = client.patch()
                 .uri("/api/employees/{employeeId}", 7)
+                .contentType(MediaType.APPLICATION_JSON)
                 .body(patchJson)
                 .exchange()
                 .expectStatus().isOk()
@@ -248,6 +254,7 @@ class EmployeeRestControllerRestTestClientTest {
 
         String body = client.patch()
                 .uri("/api/employees/{employeeId}", 8)
+                .contentType(MediaType.APPLICATION_JSON)
                 .body(patchJson)
                 .exchange()
                 .expectStatus().is5xxServerError()
@@ -276,6 +283,7 @@ class EmployeeRestControllerRestTestClientTest {
 
         String body = client.patch()
                 .uri("/api/employees/{employeeId}", 99)
+                .contentType(MediaType.APPLICATION_JSON)
                 .body(patchJson)
                 .exchange()
                 .expectStatus().is5xxServerError()
