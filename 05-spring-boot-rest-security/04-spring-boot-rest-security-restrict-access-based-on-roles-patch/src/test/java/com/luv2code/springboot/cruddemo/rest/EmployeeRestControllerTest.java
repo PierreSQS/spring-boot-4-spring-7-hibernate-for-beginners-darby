@@ -1,45 +1,42 @@
 package com.luv2code.springboot.cruddemo.rest;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.luv2code.springboot.cruddemo.entity.Employee;
 import com.luv2code.springboot.cruddemo.security.DemoSecurityConfig;
 import com.luv2code.springboot.cruddemo.service.EmployeeService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.util.List;
 import java.util.Map;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(EmployeeRestController.class)
-@Import(DemoSecurityConfig.class)
+@SpringBootTest
+@AutoConfigureMockMvc
 class EmployeeRestControllerMvcTest {
 
     @Autowired
     MockMvc mockMvc;
 
-    @MockBean
+    @MockitoBean
     EmployeeService employeeService;
 
-    @MockBean
+    @Autowired
     JsonMapper jsonMapper;
-
-    private final ObjectMapper objectMapper = new ObjectMapper();
-
+    
     private Employee createEmployee(int id) {
         return Employee.builder()
                 .id(id)
@@ -87,7 +84,7 @@ class EmployeeRestControllerMvcTest {
     @WithMockUser(username = "john", roles = {"EMPLOYEE"})
     void addEmployee_employeeRole_forbidden() throws Exception {
         Employee incoming = createEmployee(0);
-        String json = objectMapper.writeValueAsString(incoming);
+        String json = jsonMapper.writeValueAsString(incoming);
 
         mockMvc.perform(post("/api/employees")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -107,7 +104,7 @@ class EmployeeRestControllerMvcTest {
                 "firstName", "Hacker"
         );
 
-        String json = objectMapper.writeValueAsString(payload);
+        String json = jsonMapper.writeValueAsString(payload);
 
         mockMvc.perform(patch("/api/employees/{employeeId}", id)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -131,7 +128,7 @@ class EmployeeRestControllerMvcTest {
                 "firstName", "UpdatedName"
         );
 
-        String json = objectMapper.writeValueAsString(payload);
+        String json = jsonMapper.writeValueAsString(payload);
 
         Employee patched = Employee.builder()
                 .id(id)
@@ -140,7 +137,7 @@ class EmployeeRestControllerMvcTest {
                 .email(existing.getEmail())
                 .build();
 
-        when(jsonMapper.updateValue(eq(existing), eq(payload))).thenReturn(patched);
+        when(jsonMapper.updateValue(existing, payload)).thenReturn(patched);
         when(employeeService.save(patched)).thenReturn(patched);
 
         mockMvc.perform(patch("/api/employees/{employeeId}", id)
