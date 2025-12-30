@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
@@ -19,13 +20,15 @@ import tools.jackson.databind.json.JsonMapper;
 import java.util.List;
 import java.util.Map;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
-@AutoConfigureMockMvc
+@WebMvcTest(EmployeeRestController.class)
+@Import(DemoSecurityConfig.class)
 class EmployeeRestControllerMvcTest {
 
     @Autowired
@@ -70,11 +73,9 @@ class EmployeeRestControllerMvcTest {
         int missingId = 99;
         when(employeeService.findById(missingId)).thenReturn(null);
 
-        mockMvc.perform(get("/api/employees/{id}", missingId))
-                .andExpect(status().isInternalServerError())
-                .andExpect(content().string(
-                        org.hamcrest.Matchers.containsString("Employee id not found - " + missingId)
-                ));
+        assertThatThrownBy(() ->
+                mockMvc.perform(get("/api/employees/" + missingId)))
+                .hasMessageContaining("Employee id not found - " + missingId);
 
         verify(employeeService).findById(missingId);
     }
@@ -106,13 +107,12 @@ class EmployeeRestControllerMvcTest {
 
         String json = jsonMapper.writeValueAsString(payload);
 
-        mockMvc.perform(patch("/api/employees/{employeeId}", id)
+        assertThatThrownBy(() ->
+                mockMvc.perform(patch("/api/employees/{employeeId}", id)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json))
-                .andExpect(status().isInternalServerError())
-                .andExpect(content().string(
-                        org.hamcrest.Matchers.containsString("Employee id cannot be modified")
-                ));
+                        .content(json)))
+                .hasMessageContaining("Employee id cannot be modified");
+
     }
 
     @Test
@@ -137,7 +137,7 @@ class EmployeeRestControllerMvcTest {
                 .email(existing.getEmail())
                 .build();
 
-        when(jsonMapper.updateValue(existing, payload)).thenReturn(patched);
+        when(jsonMapper.updateValue(eq(existing), eq(payload))).thenReturn(patched);
         when(employeeService.save(patched)).thenReturn(patched);
 
         mockMvc.perform(patch("/api/employees/{employeeId}", id)

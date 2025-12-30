@@ -59,9 +59,10 @@
 			<artifactId>spring-boot-starter-webmvc-test</artifactId>
 		</dependency>
 
+		<!-- For security test support: @WithMockUser, etc. -->
 		<dependency>
-			<groupId>org.springframework.security</groupId>
-			<artifactId>spring-security-test</artifactId>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-security-test</artifactId>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
