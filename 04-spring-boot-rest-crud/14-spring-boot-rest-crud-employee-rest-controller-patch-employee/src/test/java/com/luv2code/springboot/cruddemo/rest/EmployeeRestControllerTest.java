@@ -13,9 +13,9 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.json.JsonMapper;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -24,6 +24,7 @@ import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(EmployeeRestController.class)
@@ -54,13 +55,14 @@ class EmployeeRestControllerTest {
                 .email("bob@example.com")
                 .build();
 
-        when(employeeService.findAll()).thenReturn(Arrays.asList(e1, e2));
+        when(employeeService.findAll()).thenReturn(List.of(e1, e2));
 
         mockMvc.perform(get("/api/employees"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(2)))
                 .andExpect(jsonPath("$[0].firstName", is("Alice")))
-                .andExpect(jsonPath("$[1].firstName", is("Bob")));
+                .andExpect(jsonPath("$[1].firstName", is("Bob")))
+                .andDo(print());
     }
 
     @Test
@@ -99,7 +101,8 @@ class EmployeeRestControllerTest {
                         .content(json))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id", is(10)))
-                .andExpect(jsonPath("$.firstName", is("Charlie")));
+                .andExpect(jsonPath("$.firstName", is("Charlie")))
+                .andDo(print());
 
         ArgumentCaptor<Employee> employeeArgumentCaptor = ArgumentCaptor.forClass(Employee.class);
         verify(employeeService).save(employeeArgumentCaptor.capture());
@@ -126,7 +129,8 @@ class EmployeeRestControllerTest {
                         .content(json))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id", is(5)))
-                .andExpect(jsonPath("$.firstName", is("Dana")));
+                .andExpect(jsonPath("$.firstName", is("Dana")))
+                .andDo(print());
     }
 
     @Test
