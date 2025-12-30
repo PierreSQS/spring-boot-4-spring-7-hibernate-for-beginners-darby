@@ -7,8 +7,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
@@ -21,7 +19,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -137,8 +135,7 @@ class EmployeeRestControllerMvcTest {
                 .email(existing.getEmail())
                 .build();
 
-        when(jsonMapper.updateValue(eq(existing), eq(payload))).thenReturn(patched);
-        when(employeeService.save(patched)).thenReturn(patched);
+        when(employeeService.save(any(Employee.class))).thenReturn(patched);
 
         mockMvc.perform(patch("/api/employees/{employeeId}", id)
                         .contentType(MediaType.APPLICATION_JSON)
