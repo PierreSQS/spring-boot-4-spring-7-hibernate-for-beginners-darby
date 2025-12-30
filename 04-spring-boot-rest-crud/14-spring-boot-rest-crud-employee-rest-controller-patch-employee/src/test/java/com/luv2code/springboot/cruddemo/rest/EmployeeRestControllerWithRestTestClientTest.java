@@ -1,6 +1,5 @@
 package com.luv2code.springboot.cruddemo.rest;
 
-import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.luv2code.springboot.cruddemo.entity.Employee;
 import com.luv2code.springboot.cruddemo.service.EmployeeService;
 import org.junit.jupiter.api.BeforeEach;
@@ -9,6 +8,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.client.RestTestClient;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.util.Collections;
 import java.util.List;
@@ -16,7 +16,6 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(SpringExtension.class)
@@ -26,12 +25,10 @@ class EmployeeRestControllerRestTestClientTest {
 
     private EmployeeService employeeService;
 
-    private JsonMapper jsonMapper;
-
     @BeforeEach
     void setUp() {
         employeeService = mock(EmployeeService.class);
-        jsonMapper = JsonMapper.builder().build();
+        JsonMapper jsonMapper = JsonMapper.builder().build();
 
         EmployeeRestController controller =
                 new EmployeeRestController(employeeService, jsonMapper);
@@ -69,7 +66,7 @@ class EmployeeRestControllerRestTestClientTest {
         assertThat(employees)
                 .isNotNull()
                 .hasSize(2);
-        assertThat(employees.get(0).getId()).isEqualTo(1);
+        assertThat(employees.getFirst().getId()).isEqualTo(1);
 
         verify(employeeService).findAll();
     }
@@ -94,7 +91,7 @@ class EmployeeRestControllerRestTestClientTest {
     }
 
     // -------------------------------------------------------------------------
-    // GET /api/employees/{employeeId}
+    // GET /api/employees/{employeeId} - find Employee By Id
     // -------------------------------------------------------------------------
 
     @Test
@@ -190,11 +187,11 @@ class EmployeeRestControllerRestTestClientTest {
         assertThat(result.getId()).isEqualTo(5);
         assertThat(result.getFirstName()).isEqualTo("Updated");
 
-        verify(employeeService).save(eq(incoming));
+        verify(employeeService).save(incoming);
     }
 
     // -------------------------------------------------------------------------
-    // PATCH /api/employees/{employeeId}
+    // PATCH /api/employees/{employeeId} - patch employee by id
     // -------------------------------------------------------------------------
 
     @Test
