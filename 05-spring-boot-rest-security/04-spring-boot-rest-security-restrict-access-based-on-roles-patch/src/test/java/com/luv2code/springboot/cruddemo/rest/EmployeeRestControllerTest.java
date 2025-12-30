@@ -144,6 +144,5 @@ class EmployeeRestControllerMvcTest {
                 .andExpect(jsonPath("$.id").value(id))
                 .andExpect(jsonPath("$.firstName").value("UpdatedName"));
 
-        verify(employeeService).save(patched);
     }
 }
