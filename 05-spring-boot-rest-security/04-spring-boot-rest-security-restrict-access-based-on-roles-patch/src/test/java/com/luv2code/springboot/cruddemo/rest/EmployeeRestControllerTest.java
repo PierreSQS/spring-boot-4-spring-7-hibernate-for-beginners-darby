@@ -1,0 +1,155 @@
+package com.luv2code.springboot.cruddemo.rest;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.luv2code.springboot.cruddemo.entity.Employee;
+import com.luv2code.springboot.cruddemo.security.DemoSecurityConfig;
+import com.luv2code.springboot.cruddemo.service.EmployeeService;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.web.servlet.MockMvc;
+import tools.jackson.databind.json.JsonMapper;
+
+import java.util.List;
+import java.util.Map;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@WebMvcTest(EmployeeRestController.class)
+@Import(DemoSecurityConfig.class)
+class EmployeeRestControllerMvcTest {
+
+    @Autowired
+    MockMvc mockMvc;
+
+    @MockBean
+    EmployeeService employeeService;
+
+    @MockBean
+    JsonMapper jsonMapper;
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    private Employee createEmployee(int id) {
+        return Employee.builder()
+                .id(id)
+                .firstName("John")
+                .lastName("Doe")
+                .email("john.doe@example.com")
+                .build();
+    }
+
+    @Test
+    @DisplayName("GET /api/employees - allowed for EMPLOYEE and returns list")
+    @WithMockUser(username = "john", roles = {"EMPLOYEE"})
+    void findAllEmployees_asEmployee_returnsList() throws Exception {
+        List<Employee> employees = List.of(createEmployee(1), createEmployee(2));
+        when(employeeService.findAll()).thenReturn(employees);
+
+        mockMvc.perform(get("/api/employees"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].id").value(1))
+                .andExpect(jsonPath("$[0].firstName").value("John"))
+                .andExpect(jsonPath("$[1].id").value(2));
+
+        verify(employeeService).findAll();
+    }
+
+    @Test
+    @DisplayName("GET /api/employees/{id} - edge case: employee not found -> 500")
+    @WithMockUser(username = "john", roles = {"EMPLOYEE"})
+    void getEmployee_notFound_throwsException() throws Exception {
+        int missingId = 99;
+        when(employeeService.findById(missingId)).thenReturn(null);
+
+        mockMvc.perform(get("/api/employees/{id}", missingId))
+                .andExpect(status().isInternalServerError())
+                .andExpect(content().string(
+                        org.hamcrest.Matchers.containsString("Employee id not found - " + missingId)
+                ));
+
+        verify(employeeService).findById(missingId);
+    }
+
+    @Test
+    @DisplayName("POST /api/employees - EMPLOYEE forbidden (needs MANAGER)")
+    @WithMockUser(username = "john", roles = {"EMPLOYEE"})
+    void addEmployee_employeeRole_forbidden() throws Exception {
+        Employee incoming = createEmployee(0);
+        String json = objectMapper.writeValueAsString(incoming);
+
+        mockMvc.perform(post("/api/employees")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("PATCH /api/employees/{id} - Rejects ID modification")
+    @WithMockUser(username = "mary", roles = {"MANAGER"})
+    void patchEmployee_payloadContainsId_returnsError() throws Exception {
+        int id = 5;
+        when(employeeService.findById(id)).thenReturn(createEmployee(id));
+
+        Map<String, Object> payload = Map.of(
+                "id", 999,
+                "firstName", "Hacker"
+        );
+
+        String json = objectMapper.writeValueAsString(payload);
+
+        mockMvc.perform(patch("/api/employees/{employeeId}", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
+                .andExpect(status().isInternalServerError())
+                .andExpect(content().string(
+                        org.hamcrest.Matchers.containsString("Employee id cannot be modified")
+                ));
+    }
+
+    @Test
+    @DisplayName("PATCH /api/employees/{id} - Happy Path")
+    @WithMockUser(username = "mary", roles = {"MANAGER"})
+    void patchEmployee_validPayload_updatesEmployee() throws Exception {
+        int id = 5;
+
+        Employee existing = createEmployee(id);
+        when(employeeService.findById(id)).thenReturn(existing);
+
+        Map<String, Object> payload = Map.of(
+                "firstName", "UpdatedName"
+        );
+
+        String json = objectMapper.writeValueAsString(payload);
+
+        Employee patched = Employee.builder()
+                .id(id)
+                .firstName("UpdatedName")
+                .lastName(existing.getLastName())
+                .email(existing.getEmail())
+                .build();
+
+        when(jsonMapper.updateValue(eq(existing), eq(payload))).thenReturn(patched);
+        when(employeeService.save(patched)).thenReturn(patched);
+
+        mockMvc.perform(patch("/api/employees/{employeeId}", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(id))
+                .andExpect(jsonPath("$.firstName").value("UpdatedName"));
+
+        verify(employeeService).save(patched);
+    }
+}
