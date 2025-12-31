@@ -5,6 +5,8 @@ import com.luv2code.springboot.cruddemo.security.DemoSecurityConfig;
 import com.luv2code.springboot.cruddemo.service.EmployeeService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -18,6 +20,7 @@ import tools.jackson.databind.json.JsonMapper;
 import java.util.List;
 import java.util.Map;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
@@ -37,7 +40,10 @@ class EmployeeRestControllerMvcTest {
 
     @Autowired
     JsonMapper jsonMapper;
-    
+
+    @Captor
+    ArgumentCaptor<Employee> employeeArgumentCaptor;
+
     private Employee createEmployee(int id) {
         return Employee.builder()
                 .id(id)
@@ -143,6 +149,15 @@ class EmployeeRestControllerMvcTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(id))
                 .andExpect(jsonPath("$.firstName").value("UpdatedName"));
+
+        // Capture and assert the actual saved Employee
+        verify(employeeService).save(employeeArgumentCaptor.capture());
+
+        Employee saved = employeeArgumentCaptor.getValue();
+        assertThat(saved.getId()).isEqualTo(id);
+        assertThat(saved.getFirstName()).isEqualTo("UpdatedName");
+        assertThat(saved.getLastName()).isEqualTo(existing.getLastName());
+        assertThat(saved.getEmail()).isEqualTo(existing.getEmail());
 
     }
 }
