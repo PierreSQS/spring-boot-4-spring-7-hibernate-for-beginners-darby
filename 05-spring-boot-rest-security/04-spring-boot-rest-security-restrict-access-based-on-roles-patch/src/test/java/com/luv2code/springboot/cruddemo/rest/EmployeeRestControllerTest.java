@@ -5,8 +5,10 @@ import com.luv2code.springboot.cruddemo.security.DemoSecurityConfig;
 import com.luv2code.springboot.cruddemo.service.EmployeeService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -26,9 +28,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(EmployeeRestController.class)
+@ExtendWith(MockitoExtension.class)
 @Import(DemoSecurityConfig.class)
 class EmployeeRestControllerMvcTest {
 
@@ -148,7 +152,8 @@ class EmployeeRestControllerMvcTest {
                         .content(json))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(id))
-                .andExpect(jsonPath("$.firstName").value("UpdatedName"));
+                .andExpect(jsonPath("$.firstName").value("UpdatedName"))
+                .andDo(print());
 
         // Capture and assert the actual saved Employee
         verify(employeeService).save(employeeArgumentCaptor.capture());
