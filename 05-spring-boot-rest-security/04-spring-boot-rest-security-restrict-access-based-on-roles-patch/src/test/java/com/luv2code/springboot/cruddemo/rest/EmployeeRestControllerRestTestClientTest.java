@@ -5,8 +5,10 @@ import com.luv2code.springboot.cruddemo.security.DemoSecurityConfig;
 import com.luv2code.springboot.cruddemo.service.EmployeeService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureRestTestClient;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -26,6 +28,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@ExtendWith(MockitoExtension.class)
 @WebMvcTest(EmployeeRestController.class)
 @AutoConfigureRestTestClient
 @Import(DemoSecurityConfig.class)
@@ -67,8 +70,7 @@ class EmployeeRestControllerRestTestClientTest {
                 .returnResult()
                 .getResponseBody();
 
-        assertThat(response).isNotNull();
-        assertThat(response).hasSize(2);
+        assertThat(response).isNotNull().hasSize(2);
         assertThat(response.get(0).getId()).isEqualTo(1);
         assertThat(response.get(0).getFirstName()).isEqualTo("John");
         assertThat(response.get(1).getId()).isEqualTo(2);
